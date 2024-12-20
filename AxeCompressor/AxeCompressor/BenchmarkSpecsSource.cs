@@ -8,17 +8,29 @@ namespace AxeCompressor;
 
 static class BenchmarkSpecsSource
 {
-    public readonly static IReadOnlyList<BenchmarkSpec> ForDefaultSerder = [
-        new(1.0f, () => [3, 22, 111]),
-        new(1.0f, () => RandomSequence(1, 0, 300, 50)),
-        new(1.0f, () => RandomSequence(2, 0, 300, 100)),
-        new(1.0f, () => RandomSequence(3, 0, 300, 500)),
-        new(1.0f, () => RandomSequence(4, 0, 300, 1000)),
-        new(1.0f, () => InclusiveRange(0, 9)),
-        new(1.0f, () => InclusiveRange(10, 99)),
-        new(1.0f, () => InclusiveRange(100, 299)),
-        new(1.0f, () => Enumerable.Repeat(InclusiveRange(0, 299), 3).SelectMany(n => n)),
-    ];
+    public static IReadOnlyList<BenchmarkSpec> ForDefaultSerder()
+    {
+        var seed = 42;
+        return [
+            new(1.0f, () => RandomSequence(seed++, 0, 300, 1)),
+            new(1.0f, () => RandomSequence(seed++, 0, 300, 2)),
+            new(1.0f, () => RandomSequence(seed++, 0, 300, 3)),
+            new(1.0f, () => RandomSequence(seed++, 0, 300, 4)),
+            new(1.0f, () => RandomSequence(seed++, 0, 300, 5)),
+            new(1.0f, () => RandomSequence(seed++, 0, 300, 6)),
+            new(1.0f, () => RandomSequence(seed++, 0, 300, 7)),
+            new(1.0f, () => RandomSequence(seed++, 0, 300, 8)),
+            new(1.0f, () => RandomSequence(seed++, 0, 300, 9)),
+            new(1.0f, () => RandomSequence(seed++, 0, 300, 50)),
+            new(1.0f, () => RandomSequence(seed++, 0, 300, 100)),
+            new(1.0f, () => RandomSequence(seed++, 0, 300, 500)),
+            new(1.0f, () => RandomSequence(seed++, 0, 300, 1000)),
+            new(1.0f, () => InclusiveRange(0, 9)),
+            new(1.0f, () => InclusiveRange(10, 99)),
+            new(1.0f, () => InclusiveRange(100, 299)),
+            new(1.0f, () => Enumerable.Repeat(InclusiveRange(0, 299), 3).SelectMany(n => n)),
+        ];
+    }
 
 
     /// <summary>

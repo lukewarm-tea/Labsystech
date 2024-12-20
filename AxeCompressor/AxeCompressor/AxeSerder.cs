@@ -11,52 +11,35 @@ namespace AxeCompressor;
 /// <summary>
 /// Сериализует и десериализует используя агресивное сжатие за счёт конкатенации на битовом уровне, с учётом домена чисел.
 /// </summary>
-class AxeSerder : ISerder
+/// <remarks>
+/// Конструктор.
+/// </remarks>
+/// <param name="alphabet">
+///     Алфавит символов, которые можно использовать для сериализации.
+///     Реально используемое количество символов будет ограничено ближайшей степенью двойки.
+/// </param>
+/// <param name="minValue">Минимально возможное значение конвертируемого числа, включительно.</param>
+/// <param name="maxValue">Максимально возможное значение конвертируемого числа, включительно.</param>
+class AxeSerder(char[] alphabet, int minValue, int maxValue) : ISerder
 {
-    // FIXME Убедиться что minValue < maxValue.
-
-    /// <summary>
-    /// Конструктор.
-    /// </summary>
-    /// <param name="alphabet">
-    ///     Алфавит символов, которые можно использовать для сериализации.
-    ///     Реально используемое количество символов будет ограничено ближайшей степенью двойки.
-    /// </param>
-    /// <param name="minValue">Минимально возможное значение конвертируемого числа, включительно.</param>
-    /// <param name="maxValue">Максимально возможное значение конвертируемого числа, включительно.</param>
-    public AxeSerder(char[] alphabet, int minValue, int maxValue)
-    {
-        _alphabet = alphabet;
-        _minValue = minValue;
-        _maxValue = maxValue;
-        _bitsPerNumber = (int)Math.Ceiling(Math.Log2(maxValue - minValue + 1));
-        _bitsPerDigit = (int)Math.Floor(Math.Log2(alphabet.Length - 1));
-        _numberMask = LowBitmask(_bitsPerNumber);
-        _digitMask = LowBitmask(_bitsPerDigit);
-    }
-
     public string Serialize(IEnumerable<int> numbers)
     {
         IEnumerable<int> IterateSourceBits()
         {
             foreach (var rawNumber in numbers)
             {
-                if (rawNumber < _minValue || rawNumber > _maxValue)
+                if (rawNumber < minValue || rawNumber > maxValue)
                 {
                     throw new ArgumentOutOfRangeException(nameof(numbers));
                 }
-                var number = rawNumber - _minValue; // центровка сэкономит биты, но нужно не забыть сдвинуть обратно при десериализации
-                if (number != (number & _numberMask))
-                {
-                    throw new InvalidProgramException("Assertion failed");
-                }
+                var number = rawNumber - minValue; // центровка сэкономит биты, но нужно не забыть сдвинуть обратно при десериализации
                 yield return number;
             }
         }
         var outChars = new List<char>();
         foreach (var digitValue in RechunkBits(IterateSourceBits(), _bitsPerNumber, _bitsPerDigit, BitTailHandling.Keep))
         {
-            outChars.Add(_alphabet[digitValue]);
+            outChars.Add(alphabet[digitValue]);
         }
         return CollectionsMarshal.AsSpan(outChars).ToString();
     }
@@ -67,7 +50,7 @@ class AxeSerder : ISerder
         {
             foreach (var digit in source)
             {
-                var digitValue = Array.IndexOf(_alphabet, digit);
+                var digitValue = Array.IndexOf(alphabet, digit);
                 if (digitValue == -1)
                 {
                     throw new ArgumentException("Invalid character found", nameof(source));
@@ -84,7 +67,13 @@ class AxeSerder : ISerder
     /// <summary>
     /// Сериализатор с настройками согласно условиями задачи.
     /// </summary>
-    public static readonly AxeSerder Default = new(ReverseRadixCodec.PrintableAsciiAlphabet, 0, 300);
+    public static AxeSerder Default { get => new(PrintableAsciiAlphabet, 0, 300); }
+
+    /// <summary>
+    /// Этот алфавит (для числовой базы) включает в себя все печатные символы из кодировки ASCII.
+    /// </summary>
+    public static readonly char[] PrintableAsciiAlphabet = Enumerable.Range(0, 127).Select(static c => (char)c).Where(static c => !char.IsControl(c)).ToArray();
+
 
     /// <summary>
     /// Склеить пооследовательность N-битных чисел и разрезать её на последовательность M-битных чисел.
@@ -149,11 +138,6 @@ class AxeSerder : ISerder
         return (int)mask;
     }
 
-    readonly char[] _alphabet;
-    readonly int _minValue;
-    readonly int _maxValue;
-    readonly int _bitsPerNumber;
-    readonly int _bitsPerDigit;
-    readonly int _numberMask;
-    readonly int _digitMask;
+    readonly int _bitsPerNumber = (int)Math.Ceiling(Math.Log2(maxValue - minValue + 1));
+    readonly int _bitsPerDigit = (int)Math.Floor(Math.Log2(alphabet.Length ));
 }
