@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35527.113
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AxeCompressor", "AxeCompressor\AxeCompressor.csproj", "{D23A302A-0062-41AB-B6AB-050FB59C1AF4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AxeCompressor.Tests", "AxeCompressor.Tests\AxeCompressor.Tests.csproj", "{F320AEF4-C97D-49E3-9928-15D26ADF744E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D23A302A-0062-41AB-B6AB-050FB59C1AF4} = {D23A302A-0062-41AB-B6AB-050FB59C1AF4}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D23A302A-0062-41AB-B6AB-050FB59C1AF4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D23A302A-0062-41AB-B6AB-050FB59C1AF4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D23A302A-0062-41AB-B6AB-050FB59C1AF4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D23A302A-0062-41AB-B6AB-050FB59C1AF4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F320AEF4-C97D-49E3-9928-15D26ADF744E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F320AEF4-C97D-49E3-9928-15D26ADF744E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F320AEF4-C97D-49E3-9928-15D26ADF744E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F320AEF4-C97D-49E3-9928-15D26ADF744E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
