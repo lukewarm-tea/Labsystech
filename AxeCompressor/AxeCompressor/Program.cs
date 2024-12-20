@@ -1,6 +1,5 @@
 ﻿using AxeCompressor;
 
-
 const int ellipsisThreshold = 60;
 
 string LimitWithEllipsis(string src)

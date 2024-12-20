@@ -1,5 +1,4 @@
-﻿
-namespace AxeCompressor;
+﻿namespace AxeCompressor;
 
 /// <summary>
 /// Сериализатор-десериализатор последовательности чисел в форму строки и обратно.
