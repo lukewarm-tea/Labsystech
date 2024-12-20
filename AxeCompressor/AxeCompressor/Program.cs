@@ -15,4 +15,3 @@ foreach (var spec in BenchmarkSpecsSource.ForDefaultSerder)
     Console.WriteLine($"Fraction: {1.0 * compressedSrc.Length / baselineSrc.Length}");
     Console.WriteLine();
 }
-

@@ -37,38 +37,25 @@ class AxeSerder : ISerder
 
     public string Serialize(IEnumerable<int> numbers)
     {
-        var bitQueue = 0;
-        var queueLen = 0;
-        var outChars = new List<char>();
-        foreach (var rawNumber in numbers)
+        IEnumerable<int> IterateSourceBits()
         {
-            if (rawNumber < _minValue || rawNumber > _maxValue)
+            foreach (var rawNumber in numbers)
             {
-                throw new ArgumentOutOfRangeException(nameof(numbers));
-            }
-            var number = rawNumber - _minValue; // центровка сэкономит биты, но нужно не забыть сдвинуть обратно при десериализации
-            if (number != (number & _numberMask))
-            {
-                throw new InvalidProgramException("Assertion failed");
-            }
-            bitQueue <<= _bitsPerNumber;
-            queueLen += _bitsPerNumber;
-            bitQueue += number & _numberMask;
-            while (queueLen >= _bitsPerDigit)
-            {
-                var offsetDepth = queueLen - _bitsPerDigit;
-                var digitValueDeep = bitQueue & (_digitMask << offsetDepth);
-                bitQueue &= ~digitValueDeep;
-                var digitValue = digitValueDeep >> offsetDepth;
-                queueLen -= _bitsPerDigit;
-                outChars.Add(_alphabet[digitValue]);
+                if (rawNumber < _minValue || rawNumber > _maxValue)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(numbers));
+                }
+                var number = rawNumber - _minValue; // центровка сэкономит биты, но нужно не забыть сдвинуть обратно при десериализации
+                if (number != (number & _numberMask))
+                {
+                    throw new InvalidProgramException("Assertion failed");
+                }
+                yield return number;
             }
         }
-        // От некоторых чисел остаётся короткий хвост, его нужно натянуть на размер цифры, иначе он пропадёт.
-        if (queueLen != 0)
+        var outChars = new List<char>();
+        foreach (var digitValue in RechunkBits(IterateSourceBits(), _bitsPerNumber, _bitsPerDigit, BitTailHandling.Keep))
         {
-            var offsetDepth = queueLen - _bitsPerDigit;
-            var digitValue = bitQueue << -offsetDepth;
             outChars.Add(_alphabet[digitValue]);
         }
         return CollectionsMarshal.AsSpan(outChars).ToString();
@@ -76,36 +63,79 @@ class AxeSerder : ISerder
 
     public IEnumerable<int> Deserialize(string source)
     {
-        var bitQueue = 0;
-        var queueLen = 0;
-        foreach (var digit in source)
+        IEnumerable<int> IterateSourceBits()
         {
-            var digitValue = Array.IndexOf(_alphabet, digit);
-            if (digitValue == -1)
+            foreach (var digit in source)
             {
-                throw new ArgumentException("Invalid character found", nameof(source));
-            }
-            bitQueue <<= _bitsPerDigit;
-            queueLen += _bitsPerDigit;
-            bitQueue += digitValue & _digitMask;
-            while (queueLen >= _bitsPerNumber)
-            {
-            var offsetDepth = queueLen - _bitsPerNumber;
-                var numberDeep = (bitQueue & (_numberMask << offsetDepth));
-                bitQueue &= ~numberDeep;
-                var number = numberDeep >> offsetDepth;
-                queueLen -= _bitsPerNumber;
-                yield return number;
+                var digitValue = Array.IndexOf(_alphabet, digit);
+                if (digitValue == -1)
+                {
+                    throw new ArgumentException("Invalid character found", nameof(source));
+                }
+                yield return digitValue;
             }
         }
-        // От некоторых цифр здесь могут остаться ещё биты в очереди.
-        // Мы их игнорируем, пушто это был паддинг для обрубка последнего исходного числа.
+        foreach (var number in RechunkBits(IterateSourceBits(), _bitsPerDigit, _bitsPerNumber, BitTailHandling.Discard))
+        {
+            yield return number;
+        }
     }
 
     /// <summary>
     /// Сериализатор с настройками согласно условиями задачи.
     /// </summary>
     public static readonly AxeSerder Default = new(ReverseRadixCodec.PrintableAsciiAlphabet, 0, 300);
+
+    /// <summary>
+    /// Склеить пооследовательность N-битных чисел и разрезать её на последовательность M-битных чисел.
+    /// </summary>
+    /// <param name="src">Исходные числа.</param>
+    /// <param name="bitsPerSrc">Сколько бит в исходных числах.</param>
+    /// <param name="bitsPerDest">Сколько должно быть бит в исходящих числах.</param>
+    /// <param name="tailHandling">Сохранять ли хвост, образующийся из-за несоответствия битовой ширины чисел?</param>
+    /// <returns>Выходные числа новой битовой ширины.</returns>
+    static IEnumerable<int> RechunkBits(IEnumerable<int> src, int bitsPerSrc, int bitsPerDest, BitTailHandling tailHandling)
+    {
+        var srcMask = LowBitmask(bitsPerSrc);
+        var destMask = LowBitmask(bitsPerDest);
+        var bitQueue = 0;
+        var queueLen = 0;
+        foreach (var srcValue in src)
+        {
+            if (srcValue != (srcValue & srcMask))
+            {
+                throw new InvalidProgramException("Assertion failed");
+                // Ну либо InvalidProgram.
+                // Так или иначе, не должно случаться.
+            }
+            bitQueue <<= bitsPerSrc;
+            queueLen += bitsPerSrc;
+            bitQueue += srcValue;
+            while (queueLen >= bitsPerDest)
+            {
+                var depth = queueLen - bitsPerDest;
+                var destValueDeep = bitQueue & (destMask << depth);
+                bitQueue &= ~destValueDeep;
+                var destValue = destValueDeep >> depth;
+                queueLen -= bitsPerDest;
+                yield return destValue;
+            }
+        }
+        // От некоторых чисел остаётся короткий хвост, его нужно натянуть на размер цифры, иначе он пропадёт.
+        // Хвост получается из-за несовпадения размера кусков (входящих супротив исходящих).
+        if ((tailHandling == BitTailHandling.Keep) & (queueLen != 0))
+        {
+            var depth = queueLen - bitsPerDest;
+            var destValue = bitQueue << -depth;
+            yield return destValue;
+        }
+    }
+
+    enum BitTailHandling
+    {
+        Keep,
+        Discard,
+    }
 
     /// <summary>
     /// Создать битовую маску, где указанное количество нижних бит будут включены.
