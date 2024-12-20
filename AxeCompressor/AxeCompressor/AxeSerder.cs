@@ -3,7 +3,7 @@
 namespace AxeCompressor;
 
 /// <summary>
-/// Сериализует и десериализует используя агресивное сжатие за счёт конкатенации на битовом уровне, с учётом домена чисел.
+/// Сериализует и десериализует используя сжатие за счёт конкатенации на битовом уровне, с учётом домена чисел.
 /// </summary>
 /// <remarks>
 /// Конструктор.
@@ -20,14 +20,14 @@ class AxeSerder(char[] alphabet, int minValue, int maxValue) : ISerder
     {
         IEnumerable<int> IterateSourceBits()
         {
-            foreach (var rawNumber in numbers)
+            foreach (var number in numbers)
             {
-                if (rawNumber < minValue || rawNumber > maxValue)
+                if (number < minValue || number > maxValue)
                 {
                     throw new ArgumentOutOfRangeException(nameof(numbers));
                 }
-                var number = rawNumber - minValue; // центровка сэкономит биты, но нужно не забыть сдвинуть обратно при десериализации
-                yield return number;
+                var centered = number - minValue; // центровка сэкономит биты, но нужно не забыть сдвинуть обратно при десериализации
+                yield return centered;
             }
         }
         var outChars = new List<char>();
@@ -52,9 +52,9 @@ class AxeSerder(char[] alphabet, int minValue, int maxValue) : ISerder
                 yield return digitValue;
             }
         }
-        foreach (var number in RechunkBits(IterateSourceBits(), _bitsPerDigit, _bitsPerNumber, BitTailHandling.Discard))
+        foreach (var centered in RechunkBits(IterateSourceBits(), _bitsPerDigit, _bitsPerNumber, BitTailHandling.Discard))
         {
-            yield return number;
+            yield return centered + minValue;
         }
     }
 

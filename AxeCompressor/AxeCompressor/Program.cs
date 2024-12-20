@@ -2,6 +2,7 @@
 
 const int ellipsisThreshold = 60;
 
+// Утилита для ограничения размера текста, чтобы не взрывать консоль.
 string LimitWithEllipsis(string src)
 {
     if (src.Length < ellipsisThreshold) return src;
@@ -11,6 +12,7 @@ string LimitWithEllipsis(string src)
 string SerializeAndValidate(IReadOnlyList<int> numbers, ISerder serder)
 {
     var data = serder.Serialize(numbers);
+    // Убедиться что сериализатор корректно десериализует свои данные.
     var restored = serder.Deserialize(data);
     if (!Enumerable.SequenceEqual(numbers, restored))
     {
@@ -21,7 +23,7 @@ string SerializeAndValidate(IReadOnlyList<int> numbers, ISerder serder)
 
 var baselineSerder = new SimpleSerder();
 var compressingSerder = AxeSerder.Default;
-var stats = new List<FractionStat>();
+var stats = new List<CompressionDatum>();
 
 foreach (var spec in BenchmarkSpecsSource.ForDefaultSerder())
 {
@@ -39,7 +41,7 @@ foreach (var spec in BenchmarkSpecsSource.ForDefaultSerder())
 Console.WriteLine("Отчёт по сжатию (количество чисел — размер):");
 foreach (var stat in stats)
 {
-    Console.WriteLine($"    {stat.SourceLen,8} — {stat.CompressionFraction}");
+    Console.WriteLine($"    {stat.SourceLength,8} — {stat.SizeFraction}");
 }
 
 
@@ -48,4 +50,4 @@ foreach (var stat in stats)
 
 
 
-record struct FractionStat(int SourceLen, double CompressionFraction);
+record struct CompressionDatum(int SourceLength, double SizeFraction);
