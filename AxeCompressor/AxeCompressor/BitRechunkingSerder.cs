@@ -12,9 +12,8 @@ namespace AxeCompressor;
 ///     Алфавит символов, которые можно использовать для сериализации.
 ///     Реально используемое количество символов будет ограничено ближайшей степенью двойки.
 /// </param>
-/// <param name="minValue">Минимально возможное значение конвертируемого числа, включительно.</param>
 /// <param name="maxValue">Максимально возможное значение конвертируемого числа, включительно.</param>
-class AxeSerder(char[] alphabet, int minValue, int maxValue) : ISerder
+class BitRechunkingSerder(char[] alphabet, int maxValue) : ISerder
 {
     public string Serialize(IEnumerable<int> numbers)
     {
@@ -22,12 +21,11 @@ class AxeSerder(char[] alphabet, int minValue, int maxValue) : ISerder
         {
             foreach (var number in numbers)
             {
-                if (number < minValue || number > maxValue)
+                if (number < 0 || number > maxValue)
                 {
                     throw new ArgumentOutOfRangeException(nameof(numbers));
                 }
-                var centered = number - minValue; // центровка сэкономит биты, но нужно не забыть сдвинуть обратно при десериализации
-                yield return centered;
+                yield return number;
             }
         }
         var outChars = new List<char>();
@@ -52,21 +50,16 @@ class AxeSerder(char[] alphabet, int minValue, int maxValue) : ISerder
                 yield return digitValue;
             }
         }
-        foreach (var centered in RechunkBits(IterateSourceBits(), _bitsPerDigit, _bitsPerNumber, BitTailHandling.Discard))
+        foreach (var number in RechunkBits(IterateSourceBits(), _bitsPerDigit, _bitsPerNumber, BitTailHandling.Discard))
         {
-            yield return centered + minValue;
+            yield return number;
         }
     }
 
     /// <summary>
     /// Сериализатор с настройками согласно условиями задачи.
     /// </summary>
-    public static AxeSerder Default { get => new(PrintableAsciiAlphabet, 0, 300); }
-
-    /// <summary>
-    /// Этот алфавит (для числовой базы) включает в себя все печатные символы из кодировки ASCII.
-    /// </summary>
-    public static readonly char[] PrintableAsciiAlphabet = Enumerable.Range(0, 127).Select(static c => (char)c).Where(static c => !char.IsControl(c)).ToArray();
+    public static BitRechunkingSerder Default { get => new(RadixAlphabet.PrintableAsciiAlphabet, 300); }
 
 
     /// <summary>
@@ -97,7 +90,7 @@ class AxeSerder(char[] alphabet, int minValue, int maxValue) : ISerder
             while (queueLen >= bitsPerDest)
             {
                 var depth = queueLen - bitsPerDest;
-                var destValueDeep = bitQueue & (destMask << depth);
+                var destValueDeep = bitQueue & destMask << depth;
                 bitQueue &= ~destValueDeep;
                 var destValue = destValueDeep >> depth;
                 queueLen -= bitsPerDest;
@@ -106,7 +99,7 @@ class AxeSerder(char[] alphabet, int minValue, int maxValue) : ISerder
         }
         // От некоторых чисел остаётся короткий хвост, его нужно натянуть на размер цифры, иначе он пропадёт.
         // Хвост получается из-за несовпадения размера кусков (входящих супротив исходящих).
-        if ((tailHandling == BitTailHandling.Keep) & (queueLen != 0))
+        if (tailHandling == BitTailHandling.Keep & queueLen != 0)
         {
             var depth = queueLen - bitsPerDest;
             var destValue = bitQueue << -depth;
@@ -132,6 +125,6 @@ class AxeSerder(char[] alphabet, int minValue, int maxValue) : ISerder
         return (int)mask;
     }
 
-    readonly int _bitsPerNumber = (int)Math.Ceiling(Math.Log2(maxValue - minValue + 1));
-    readonly int _bitsPerDigit = (int)Math.Floor(Math.Log2(alphabet.Length ));
+    readonly int _bitsPerNumber = (int)Math.Ceiling(Math.Log2(maxValue + 1));
+    readonly int _bitsPerDigit = (int)Math.Floor(Math.Log2(alphabet.Length));
 }

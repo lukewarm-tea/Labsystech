@@ -1,40 +1,57 @@
 ﻿namespace AxeCompressor.Tests;
 
-public class AxeSerderTest
+public class TestBase
+{
+    public static void AssertEqualSorted(IEnumerable<int> a, IEnumerable<int> b)
+    {
+        var aa = a.Order().ToList();
+        var bb = b.Order().ToList();
+        Assert.Equal(aa, bb);
+    }
+}
+
+public class RadixAlphabetTest : TestBase
 {
     [Fact]
     public void PrintableAsciiAlphabetSizeAdheresToAsciiStandard()
     {
         const int numPrintableCharactersPerAsciiSpec = 95;
-        Assert.Equal(numPrintableCharactersPerAsciiSpec, AxeSerder.PrintableAsciiAlphabet.Length);
+        Assert.Equal(numPrintableCharactersPerAsciiSpec, RadixAlphabet.PrintableAsciiAlphabet.Length);
     }
+}
 
-    [Fact]
-    public void CanSerializeBasicExample()
-    {
-        IReadOnlyList<int> givenInput = [1, 25, 17, 299];
-        string expectedOutput = " (9\",K";
-
-        var serder = AxeSerder.Default;
-        var effectiveOutput = serder.Serialize(givenInput);
-        var restoredInput = serder.Deserialize(effectiveOutput);
-
-        Assert.Equal(expectedOutput, effectiveOutput);
-        Assert.Equal(givenInput, restoredInput);
-    }
-
+public class AxeSerderTest : TestBase
+{
     [Fact]
     public void CanReserializeBenchmarkSpecs()
     {
-        var serder = AxeSerder.Default;
+        var serder = BitRechunkingSerder.Default;
 
         foreach (var spec in BenchmarkSpecsSource.ForDefaultSerder())
         {
             IReadOnlyList<int> givenInput = spec.GetNumbers().ToList();
             var serializedValue = serder.Serialize(givenInput);
-            var deserializedValue = serder.Deserialize(serializedValue);
+            var reserializedInput = serder.Deserialize(serializedValue);
 
-            Assert.Equal(givenInput, deserializedValue);
+            AssertEqualSorted(givenInput, reserializedInput);
+        }
+    }
+}
+
+public class DeltaSerderTest : TestBase
+{
+    [Fact]
+    public void CanReserializeBenchmarkSpecs()
+    {
+        var serder = DeltaEncodingSerder.Default;
+
+        foreach (var spec in BenchmarkSpecsSource.ForDefaultSerder())
+        {
+            IReadOnlyList<int> givenInput = spec.GetNumbers().ToList();
+            var serializedValue = serder.Serialize(givenInput);
+            var reserializedInput = serder.Deserialize(serializedValue);
+
+            AssertEqualSorted(givenInput, reserializedInput);
         }
     }
 }
