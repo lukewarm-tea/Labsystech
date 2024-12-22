@@ -1,6 +1,4 @@
-﻿using System.Linq;
-
-namespace AxeCompressor;
+﻿namespace AxeCompressor;
 
 /// <summary>
 /// Сериализатор, использующий сжатие на основе дельта-кодирования.

@@ -20,7 +20,7 @@ public class RadixAlphabetTest : TestBase
     }
 }
 
-public class AxeSerderTest : TestBase
+public class BitRechunkingSerderTest : TestBase
 {
     [Fact]
     public void CanReserializeBenchmarkSpecs()
@@ -38,7 +38,7 @@ public class AxeSerderTest : TestBase
     }
 }
 
-public class DeltaSerderTest : TestBase
+public class DeltaEncodingSerderTest : TestBase
 {
     [Fact]
     public void CanReserializeBenchmarkSpecs()
